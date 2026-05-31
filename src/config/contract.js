@@ -49,6 +49,44 @@ export const CONTRACT_ABI = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{ "indexed": true, "internalType": "address", "name": "patient", "type": "address" },
+			{ "indexed": false, "internalType": "string", "name": "name", "type": "string" }
+		],
+		"name": "PatientUpdated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{ "indexed": true, "internalType": "address", "name": "doctor", "type": "address" },
+			{ "indexed": false, "internalType": "string", "name": "name", "type": "string" }
+		],
+		"name": "DoctorUpdated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{ "internalType": "string", "name": "name", "type": "string" },
+			{ "internalType": "uint256", "name": "dob", "type": "uint256" }
+		],
+		"name": "updatePatient",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{ "internalType": "string", "name": "name", "type": "string" },
+			{ "internalType": "string", "name": "specialization", "type": "string" }
+		],
+		"name": "updateDoctor",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{ "internalType": "address", "name": "patient", "type": "address" },
 			{ "internalType": "string", "name": "recordType", "type": "string" },
@@ -95,6 +133,44 @@ export const CONTRACT_ABI = [
 		"name": "revokeAccess",
 		"outputs": [],
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [{ "internalType": "address", "name": "patient", "type": "address" }],
+		"name": "requestAccess",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
+		"name": "approveAccessRequest",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
+		"name": "denyAccessRequest",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getPendingRequests",
+		"outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{ "internalType": "address", "name": "doctor", "type": "address" },
+			{ "internalType": "address", "name": "patient", "type": "address" }
+		],
+		"name": "hasRequestedAccess",
+		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{

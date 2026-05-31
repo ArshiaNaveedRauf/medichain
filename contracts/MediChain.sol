@@ -37,7 +37,9 @@ contract MediChain {
     uint256 private recordCounter;
 
     event PatientRegistered(address indexed patient, string name);
+    event PatientUpdated(address indexed patient, string name);
     event DoctorRegistered(address indexed doctor, string name);
+    event DoctorUpdated(address indexed doctor, string name);
     event RecordAdded(uint256 indexed recordId, address indexed patient, address indexed doctor, string recordType);
     event AccessGranted(address indexed patient, address indexed doctor);
     event AccessRevoked(address indexed patient, address indexed doctor);
@@ -66,6 +68,21 @@ contract MediChain {
         require(!patients[msg.sender].isRegistered, "Address is already registered as a patient");
         doctors[msg.sender] = Doctor(name, specialization, true);
         emit DoctorRegistered(msg.sender, name);
+    }
+
+    function updatePatient(string memory name, uint256 dob) external onlyRegisteredPatient {
+        require(bytes(name).length > 0, "Name cannot be empty");
+        patients[msg.sender].name = name;
+        patients[msg.sender].dateOfBirth = dob;
+        emit PatientUpdated(msg.sender, name);
+    }
+
+    function updateDoctor(string memory name, string memory specialization) external onlyRegisteredDoctor {
+        require(bytes(name).length > 0, "Name cannot be empty");
+        require(bytes(specialization).length > 0, "Specialization cannot be empty");
+        doctors[msg.sender].name = name;
+        doctors[msg.sender].specialization = specialization;
+        emit DoctorUpdated(msg.sender, name);
     }
 
     function grantAccess(address doctor) external onlyRegisteredPatient {

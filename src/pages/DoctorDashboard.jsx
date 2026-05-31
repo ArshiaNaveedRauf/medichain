@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Copy, Check, PlusCircle, Search, Stethoscope, Bell,
   ChevronDown, ChevronUp, Calendar, User, Hash,
-  FlaskConical, Pill, ScanLine, FileText, Layers, Filter
+  FlaskConical, Pill, ScanLine, FileText, Layers, Filter, Pencil
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useWeb3 } from "../context/Web3Context";
@@ -13,6 +13,7 @@ import Navbar from "../components/Navbar";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
 import CatLogo from "../components/CatLogo";
+import EditProfileModal from "../components/EditProfileModal";
 
 const RECORD_TYPES = ["Diagnosis", "Prescription", "Lab Result", "Imaging", "Other"];
 
@@ -166,6 +167,7 @@ export default function DoctorDashboard() {
   const { account, doctorData, loading } = useWeb3();
   const { call, read } = useContract();
   const [tab, setTab] = useState("add");
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Add Record
   const [patientAddr, setPatientAddr] = useState("");
@@ -255,23 +257,35 @@ export default function DoctorDashboard() {
 
         {/* Header card */}
         <div className="bg-white border border-border rounded-3xl shadow-soft p-6 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-sage/20 flex items-center justify-center shrink-0">
-              <Stethoscope size={24} className="text-sage-dark" />
-            </div>
-            <div>
-              <p className="text-muted text-sm mb-0.5">Logged in as</p>
-              <h1 className="text-2xl font-extrabold text-text-main">Dr. {doctorData?.name || "Doctor"}</h1>
-              {doctorData?.specialization && (
-                <p className="text-sage-dark font-semibold text-sm mb-1">{doctorData.specialization}</p>
-              )}
-              <div className="flex items-center gap-1 text-sm text-muted">
-                <span className="font-mono">{truncateAddress(account, 10, 8)}</span>
-                <CopyButton text={account} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-sage/20 flex items-center justify-center shrink-0">
+                <Stethoscope size={24} className="text-sage-dark" />
+              </div>
+              <div>
+                <p className="text-muted text-sm mb-0.5">Logged in as</p>
+                <h1 className="text-2xl font-extrabold text-text-main">Dr. {doctorData?.name || "Doctor"}</h1>
+                {doctorData?.specialization && (
+                  <p className="text-sage-dark font-semibold text-sm mb-1">{doctorData.specialization}</p>
+                )}
+                <div className="flex items-center gap-1 text-sm text-muted">
+                  <span className="font-mono">{truncateAddress(account, 10, 8)}</span>
+                  <CopyButton text={account} />
+                </div>
               </div>
             </div>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-sage-dark hover:bg-sage/10 px-3 py-2 rounded-xl transition-colors border border-border shrink-0"
+            >
+              <Pencil size={14} /> Edit
+            </button>
           </div>
         </div>
+
+        {showEditModal && (
+          <EditProfileModal onClose={() => setShowEditModal(false)} />
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white border border-border rounded-2xl p-1 mb-6 w-fit">

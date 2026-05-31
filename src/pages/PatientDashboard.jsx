@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy, Check, FileText, Users, Plus, Trash2, Bell, CheckCircle, XCircle } from "lucide-react";
+import { Copy, Check, FileText, Users, Plus, Trash2, Bell, CheckCircle, XCircle, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import { useWeb3 } from "../context/Web3Context";
 import { useContract } from "../hooks/useContract";
@@ -10,6 +10,7 @@ import RecordCard from "../components/RecordCard";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
 import CatLogo from "../components/CatLogo";
+import EditProfileModal from "../components/EditProfileModal";
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
@@ -27,6 +28,7 @@ export default function PatientDashboard() {
   const { account, patientData, loading } = useWeb3();
   const { call, read } = useContract();
   const [tab, setTab] = useState("records");
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Records
   const [records, setRecords] = useState([]);
@@ -125,18 +127,32 @@ export default function PatientDashboard() {
 
         {/* Header card */}
         <div className="bg-white border border-border rounded-3xl shadow-soft p-6 mb-6">
-          <p className="text-muted text-sm mb-1">Welcome back,</p>
-          <h1 className="text-2xl font-extrabold text-text-main mb-1">
-            {patientData?.name || "Patient"}
-          </h1>
-          {patientData?.dateOfBirth ? (
-            <p className="text-muted text-sm mb-2">Born: {formatDate(patientData.dateOfBirth)}</p>
-          ) : null}
-          <div className="flex items-center gap-1 text-sm text-muted">
-            <span className="font-mono">{truncateAddress(account, 10, 8)}</span>
-            <CopyButton text={account} />
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-muted text-sm mb-1">Welcome back,</p>
+              <h1 className="text-2xl font-extrabold text-text-main mb-1">
+                {patientData?.name || "Patient"}
+              </h1>
+              {patientData?.dateOfBirth ? (
+                <p className="text-muted text-sm mb-2">Born: {formatDate(patientData.dateOfBirth)}</p>
+              ) : null}
+              <div className="flex items-center gap-1 text-sm text-muted">
+                <span className="font-mono">{truncateAddress(account, 10, 8)}</span>
+                <CopyButton text={account} />
+              </div>
+            </div>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-sage-dark hover:bg-sage/10 px-3 py-2 rounded-xl transition-colors border border-border"
+            >
+              <Pencil size={14} /> Edit
+            </button>
           </div>
         </div>
+
+        {showEditModal && (
+          <EditProfileModal onClose={() => setShowEditModal(false)} />
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white border border-border rounded-2xl p-1 mb-6 w-fit">
