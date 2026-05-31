@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0x4FAc9d51554ff0EC6Aab30587C7387e5bDd936cE";
+export const CONTRACT_ADDRESS = "0x459C1cA80B82A432a7b2B20ab1093dCC3c5906d8";
 
 export const CONTRACT_ABI = [
 	{
@@ -49,44 +49,6 @@ export const CONTRACT_ABI = [
 		"type": "event"
 	},
 	{
-		"anonymous": false,
-		"inputs": [
-			{ "indexed": true, "internalType": "address", "name": "patient", "type": "address" },
-			{ "indexed": false, "internalType": "string", "name": "name", "type": "string" }
-		],
-		"name": "PatientUpdated",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{ "indexed": true, "internalType": "address", "name": "doctor", "type": "address" },
-			{ "indexed": false, "internalType": "string", "name": "name", "type": "string" }
-		],
-		"name": "DoctorUpdated",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{ "internalType": "string", "name": "name", "type": "string" },
-			{ "internalType": "uint256", "name": "dob", "type": "uint256" }
-		],
-		"name": "updatePatient",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{ "internalType": "string", "name": "name", "type": "string" },
-			{ "internalType": "string", "name": "specialization", "type": "string" }
-		],
-		"name": "updateDoctor",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{ "internalType": "address", "name": "patient", "type": "address" },
 			{ "internalType": "string", "name": "recordType", "type": "string" },
@@ -98,20 +60,15 @@ export const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{ "internalType": "address", "name": "doctor", "type": "address" }
-		],
+		"inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
 		"name": "grantAccess",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{ "internalType": "string", "name": "name", "type": "string" },
-			{ "internalType": "string", "name": "specialization", "type": "string" }
-		],
-		"name": "registerDoctor",
+		"inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
+		"name": "revokeAccess",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -128,49 +85,12 @@ export const CONTRACT_ABI = [
 	},
 	{
 		"inputs": [
-			{ "internalType": "address", "name": "doctor", "type": "address" }
+			{ "internalType": "string", "name": "name", "type": "string" },
+			{ "internalType": "string", "name": "specialization", "type": "string" }
 		],
-		"name": "revokeAccess",
+		"name": "registerDoctor",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [{ "internalType": "address", "name": "patient", "type": "address" }],
-		"name": "requestAccess",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
-		"name": "approveAccessRequest",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
-		"name": "denyAccessRequest",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getPendingRequests",
-		"outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{ "internalType": "address", "name": "doctor", "type": "address" },
-			{ "internalType": "address", "name": "patient", "type": "address" }
-		],
-		"name": "hasRequestedAccess",
-		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -184,13 +104,22 @@ export const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{ "internalType": "address", "name": "", "type": "address" }
-		],
+		"inputs": [{ "internalType": "address", "name": "", "type": "address" }],
 		"name": "doctors",
 		"outputs": [
 			{ "internalType": "string", "name": "name", "type": "string" },
 			{ "internalType": "string", "name": "specialization", "type": "string" },
+			{ "internalType": "bool", "name": "isRegistered", "type": "bool" }
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+		"name": "patients",
+		"outputs": [
+			{ "internalType": "string", "name": "name", "type": "string" },
+			{ "internalType": "uint256", "name": "dateOfBirth", "type": "uint256" },
 			{ "internalType": "bool", "name": "isRegistered", "type": "bool" }
 		],
 		"stateMutability": "view",
@@ -225,9 +154,7 @@ export const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{ "internalType": "address", "name": "patient", "type": "address" }
-		],
+		"inputs": [{ "internalType": "address", "name": "patient", "type": "address" }],
 		"name": "getPatientRecords",
 		"outputs": [
 			{
@@ -258,33 +185,16 @@ export const CONTRACT_ABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{ "internalType": "address", "name": "addr", "type": "address" }
-		],
+		"inputs": [{ "internalType": "address", "name": "addr", "type": "address" }],
 		"name": "isDoctor",
 		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{ "internalType": "address", "name": "addr", "type": "address" }
-		],
+		"inputs": [{ "internalType": "address", "name": "addr", "type": "address" }],
 		"name": "isPatient",
 		"outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{ "internalType": "address", "name": "", "type": "address" }
-		],
-		"name": "patients",
-		"outputs": [
-			{ "internalType": "string", "name": "name", "type": "string" },
-			{ "internalType": "uint256", "name": "dateOfBirth", "type": "uint256" },
-			{ "internalType": "bool", "name": "isRegistered", "type": "bool" }
-		],
 		"stateMutability": "view",
 		"type": "function"
 	}
