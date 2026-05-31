@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useWeb3 } from "../context/Web3Context";
 import { parseContractError } from "../utils/validation";
 import toast from "react-hot-toast";
@@ -5,7 +6,7 @@ import toast from "react-hot-toast";
 export function useContract() {
   const { contract, setLoading } = useWeb3();
 
-  async function call(fn, successMsg) {
+  const call = useCallback(async (fn, successMsg) => {
     if (!contract) {
       toast.error("Contract not loaded. Check your configuration.");
       return { success: false };
@@ -25,9 +26,9 @@ export function useContract() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [contract, setLoading]);
 
-  async function read(fn) {
+  const read = useCallback(async (fn) => {
     if (!contract) return null;
     try {
       return await fn(contract);
@@ -36,7 +37,7 @@ export function useContract() {
       toast.error(msg);
       return null;
     }
-  }
+  }, [contract]);
 
   return { call, read };
 }

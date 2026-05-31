@@ -28,6 +28,12 @@ contract MediChain {
     mapping(address => Record[]) private patientRecords;
     mapping(address => mapping(address => bool)) public accessPermissions;
     mapping(address => address[]) private patientGrantedDoctors;
+
+    // Access requests: doctor => patient => pending
+    mapping(address => mapping(address => bool)) public accessRequests;
+    // patient => list of doctors who have a pending request
+    mapping(address => address[]) private patientPendingRequests;
+
     uint256 private recordCounter;
 
     event PatientRegistered(address indexed patient, string name);
@@ -35,6 +41,8 @@ contract MediChain {
     event RecordAdded(uint256 indexed recordId, address indexed patient, address indexed doctor, string recordType);
     event AccessGranted(address indexed patient, address indexed doctor);
     event AccessRevoked(address indexed patient, address indexed doctor);
+    event AccessRequested(address indexed doctor, address indexed patient);
+    event AccessRequestDenied(address indexed doctor, address indexed patient);
 
     modifier onlyRegisteredPatient() {
         require(patients[msg.sender].isRegistered, "Patient not registered");
@@ -65,6 +73,11 @@ contract MediChain {
         require(!accessPermissions[msg.sender][doctor], "Access already granted to this doctor");
         accessPermissions[msg.sender][doctor] = true;
         patientGrantedDoctors[msg.sender].push(doctor);
+        // Clear any pending request from this doctor
+        if (accessRequests[doctor][msg.sender]) {
+            _removePendingRequest(msg.sender, doctor);
+            accessRequests[doctor][msg.sender] = false;
+        }
         emit AccessGranted(msg.sender, doctor);
     }
 
@@ -80,6 +93,43 @@ contract MediChain {
             }
         }
         emit AccessRevoked(msg.sender, doctor);
+    }
+
+    function requestAccess(address patient) external onlyRegisteredDoctor {
+        require(patients[patient].isRegistered, "Patient not registered");
+        require(!accessPermissions[patient][msg.sender], "Already have access to this patient");
+        require(!accessRequests[msg.sender][patient], "Access request already pending");
+        accessRequests[msg.sender][patient] = true;
+        patientPendingRequests[patient].push(msg.sender);
+        emit AccessRequested(msg.sender, patient);
+    }
+
+    function approveAccessRequest(address doctor) external onlyRegisteredPatient {
+        require(accessRequests[doctor][msg.sender], "No pending request from this doctor");
+        require(!accessPermissions[msg.sender][doctor], "Access already granted to this doctor");
+        accessRequests[doctor][msg.sender] = false;
+        _removePendingRequest(msg.sender, doctor);
+        accessPermissions[msg.sender][doctor] = true;
+        patientGrantedDoctors[msg.sender].push(doctor);
+        emit AccessGranted(msg.sender, doctor);
+    }
+
+    function denyAccessRequest(address doctor) external onlyRegisteredPatient {
+        require(accessRequests[doctor][msg.sender], "No pending request from this doctor");
+        accessRequests[doctor][msg.sender] = false;
+        _removePendingRequest(msg.sender, doctor);
+        emit AccessRequestDenied(doctor, msg.sender);
+    }
+
+    function _removePendingRequest(address patient, address doctor) internal {
+        address[] storage pending = patientPendingRequests[patient];
+        for (uint256 i = 0; i < pending.length; i++) {
+            if (pending[i] == doctor) {
+                pending[i] = pending[pending.length - 1];
+                pending.pop();
+                break;
+            }
+        }
     }
 
     function addRecord(
@@ -114,6 +164,10 @@ contract MediChain {
         return patientGrantedDoctors[msg.sender];
     }
 
+    function getPendingRequests() external view onlyRegisteredPatient returns (address[] memory) {
+        return patientPendingRequests[msg.sender];
+    }
+
     function isPatient(address addr) external view returns (bool) {
         return patients[addr].isRegistered;
     }
@@ -124,5 +178,9 @@ contract MediChain {
 
     function hasAccess(address patient, address doctor) external view returns (bool) {
         return accessPermissions[patient][doctor];
+    }
+
+    function hasRequestedAccess(address doctor, address patient) external view returns (bool) {
+        return accessRequests[doctor][patient];
     }
 }

@@ -22,6 +22,8 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.4s ease-out both',
         'slide-up': 'slideUp 0.4s ease-out both',
+        'float': 'float 3s ease-in-out infinite',
+        'teardrop': 'teardrop 3s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -31,6 +33,14 @@ export default {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        teardrop: {
+          '0%, 60%, 100%': { opacity: '0', transform: 'translateY(0px)' },
+          '80%': { opacity: '1', transform: 'translateY(8px)' },
         },
       },
     },

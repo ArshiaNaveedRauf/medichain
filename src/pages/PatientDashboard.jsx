@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Copy, Check, FileText, Users, Plus, Trash2 } from "lucide-react";
+import { Copy, Check, FileText, Users, Plus, Trash2, Bell, CheckCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useWeb3 } from "../context/Web3Context";
 import { useContract } from "../hooks/useContract";
@@ -9,6 +9,7 @@ import Navbar from "../components/Navbar";
 import RecordCard from "../components/RecordCard";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
+import CatLogo from "../components/CatLogo";
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
@@ -29,14 +30,20 @@ export default function PatientDashboard() {
 
   // Records
   const [records, setRecords] = useState([]);
-  const [recordsLoading, setRecordsLoading] = useState(true);
+  const [recordsLoading, setRecordsLoading] = useState(false);
 
-  // Access
+  // Access management
   const [grantedDoctors, setGrantedDoctors] = useState([]);
-  const [accessLoading, setAccessLoading] = useState(true);
+  const [accessLoading, setAccessLoading] = useState(false);
   const [doctorInput, setDoctorInput] = useState("");
   const [grantLoading, setGrantLoading] = useState(false);
   const [revokingAddr, setRevokingAddr] = useState(null);
+
+  // Access requests
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [approvingAddr, setApprovingAddr] = useState(null);
+  const [denyingAddr, setDenyingAddr] = useState(null);
 
   const fetchRecords = useCallback(async () => {
     setRecordsLoading(true);
@@ -52,19 +59,29 @@ export default function PatientDashboard() {
     setAccessLoading(false);
   }, [read]);
 
+  const fetchPendingRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    const data = await read((c) => c.getPendingRequests());
+    if (data) setPendingRequests([...data]);
+    setRequestsLoading(false);
+  }, [read]);
+
   useEffect(() => { fetchRecords(); }, [fetchRecords]);
   useEffect(() => { if (tab === "access") fetchGrantedDoctors(); }, [tab, fetchGrantedDoctors]);
+  useEffect(() => { if (tab === "requests") fetchPendingRequests(); }, [tab, fetchPendingRequests]);
+
+  // Also fetch pending count for badge on mount
+  useEffect(() => { fetchPendingRequests(); }, [fetchPendingRequests]);
 
   const handleGrantAccess = async (e) => {
     e.preventDefault();
     if (!isValidAddress(doctorInput)) { toast.error("Invalid Ethereum address."); return; }
-    // Check if doctor is registered
     const isDoc = await read((c) => c.isDoctor(doctorInput));
     if (!isDoc) { toast.error("That address is not a registered doctor."); return; }
     setGrantLoading(true);
     const result = await call((c) => c.grantAccess(doctorInput), "Access granted!");
     setGrantLoading(false);
-    if (result.success) { setDoctorInput(""); fetchGrantedDoctors(); }
+    if (result.success) { setDoctorInput(""); fetchGrantedDoctors(); fetchPendingRequests(); }
   };
 
   const handleRevokeAccess = async (doctorAddr) => {
@@ -74,7 +91,32 @@ export default function PatientDashboard() {
     if (result.success) fetchGrantedDoctors();
   };
 
+  const handleApproveRequest = async (doctorAddr) => {
+    setApprovingAddr(doctorAddr);
+    const result = await call((c) => c.approveAccessRequest(doctorAddr), "Access approved!");
+    setApprovingAddr(null);
+    if (result.success) { fetchPendingRequests(); fetchGrantedDoctors(); }
+  };
+
+  const handleDenyRequest = async (doctorAddr) => {
+    setDenyingAddr(doctorAddr);
+    const result = await call((c) => c.denyAccessRequest(doctorAddr), "Request denied.");
+    setDenyingAddr(null);
+    if (result.success) fetchPendingRequests();
+  };
+
   const inputClass = "flex-1 border border-border rounded-xl px-4 py-3 text-text-main placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-sage/50 focus:border-sage transition-all bg-white text-sm font-mono";
+
+  const tabs = [
+    { id: "records", label: "My Records", icon: FileText },
+    { id: "access", label: "Manage Access", icon: Users },
+    {
+      id: "requests",
+      label: "Requests",
+      icon: Bell,
+      badge: pendingRequests.length > 0 ? pendingRequests.length : null,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-cream">
@@ -98,21 +140,23 @@ export default function PatientDashboard() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white border border-border rounded-2xl p-1 mb-6 w-fit">
-          {[
-            { id: "records", label: "My Records", icon: FileText },
-            { id: "access", label: "Manage Access", icon: Users },
-          ].map(({ id, label, icon: Icon }) => (
+          {tabs.map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                tab === id
-                  ? "bg-sage text-white shadow-sm"
-                  : "text-muted hover:text-text-main"
+              className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                tab === id ? "bg-sage text-white shadow-sm" : "text-muted hover:text-text-main"
               }`}
             >
               <Icon size={16} />
               {label}
+              {badge && (
+                <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center ${
+                  tab === id ? "bg-white text-sage-dark" : "bg-pink text-rose-700"
+                }`}>
+                  {badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -123,15 +167,16 @@ export default function PatientDashboard() {
             {recordsLoading ? (
               <div className="flex justify-center py-16"><LoadingSpinner size={32} /></div>
             ) : records.length === 0 ? (
-              <EmptyState
-                message="No records yet."
-                sub="They'll appear here when a doctor adds one."
-              />
+              <div className="flex flex-col items-center justify-center py-12 gap-3 animate-fade-in">
+                <div className="animate-float"><CatLogo size={120} sad /></div>
+                <p className="text-text-main font-bold text-base mt-1">No records yet.</p>
+                <p className="text-muted text-sm text-center max-w-xs leading-relaxed">
+                  Your medical records will appear here once a doctor with access adds one.
+                </p>
+              </div>
             ) : (
               <div className="space-y-4">
-                {records.map((r, i) => (
-                  <RecordCard key={`${r.id}-${i}`} record={r} />
-                ))}
+                {records.map((r, i) => <RecordCard key={`${r.id}-${i}`} record={r} />)}
               </div>
             )}
           </div>
@@ -140,7 +185,6 @@ export default function PatientDashboard() {
         {/* Access tab */}
         {tab === "access" && (
           <div className="animate-fade-in space-y-6">
-            {/* Grant form */}
             <div className="bg-white border border-border rounded-3xl shadow-soft p-6">
               <h2 className="font-bold text-text-main mb-4">Grant Access to a Doctor</h2>
               <form onSubmit={handleGrantAccess} className="flex gap-3">
@@ -162,16 +206,18 @@ export default function PatientDashboard() {
               </form>
             </div>
 
-            {/* Granted doctors list */}
             <div className="bg-white border border-border rounded-3xl shadow-soft p-6">
               <h2 className="font-bold text-text-main mb-4">Doctors with Access</h2>
               {accessLoading ? (
                 <div className="flex justify-center py-8"><LoadingSpinner size={24} /></div>
               ) : grantedDoctors.length === 0 ? (
-                <EmptyState
-                  message="No doctors with access."
-                  sub="You haven't granted access to any doctors yet."
-                />
+                <div className="flex flex-col items-center justify-center py-10 gap-3 animate-fade-in">
+                  <div className="animate-float"><CatLogo size={110} sad /></div>
+                  <p className="text-text-main font-bold text-base mt-1">No doctors have access yet.</p>
+                  <p className="text-muted text-sm text-center max-w-xs leading-relaxed">
+                    Use the form above to grant a doctor access to your records.
+                  </p>
+                </div>
               ) : (
                 <ul className="space-y-3">
                   {grantedDoctors.map((addr) => (
@@ -188,6 +234,71 @@ export default function PatientDashboard() {
                         {revokingAddr === addr ? <LoadingSpinner size={13} color="#ef4444" /> : <Trash2 size={13} />}
                         Revoke
                       </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Requests tab */}
+        {tab === "requests" && (
+          <div className="animate-fade-in">
+            <div className="bg-white border border-border rounded-3xl shadow-soft p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Bell size={18} className="text-sage-dark" />
+                <h2 className="font-bold text-text-main text-lg">Access Requests</h2>
+                {pendingRequests.length > 0 && (
+                  <span className="bg-pink text-rose-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                    {pendingRequests.length} pending
+                  </span>
+                )}
+              </div>
+
+              {requestsLoading ? (
+                <div className="flex justify-center py-12"><LoadingSpinner size={28} /></div>
+              ) : pendingRequests.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-3 animate-fade-in">
+                  <div className="animate-float"><CatLogo size={110} desaturated /></div>
+                  <p className="text-text-main font-bold text-base mt-1">No pending requests.</p>
+                  <p className="text-muted text-sm text-center max-w-xs">
+                    When a doctor requests access to your records, it will appear here for you to approve or deny.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {pendingRequests.map((addr) => (
+                    <li key={addr} className="bg-cream border border-border rounded-2xl p-4 animate-slide-up">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs text-muted mb-1 font-medium">Doctor requesting access</p>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-sm text-text-main font-semibold">
+                              {truncateAddress(addr, 12, 8)}
+                            </span>
+                            <CopyButton text={addr} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleDenyRequest(addr)}
+                            disabled={denyingAddr === addr || approvingAddr === addr || loading}
+                            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-semibold px-3 py-2 rounded-xl hover:bg-red-50 border border-red-200 transition-colors disabled:opacity-50"
+                          >
+                            {denyingAddr === addr ? <LoadingSpinner size={13} color="#ef4444" /> : <XCircle size={14} />}
+                            Deny
+                          </button>
+                          <button
+                            onClick={() => handleApproveRequest(addr)}
+                            disabled={approvingAddr === addr || denyingAddr === addr || loading}
+                            className="flex items-center gap-1.5 text-xs text-white bg-sage hover:bg-sage-dark font-semibold px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
+                          >
+                            {approvingAddr === addr ? <LoadingSpinner size={13} color="white" /> : <CheckCircle size={14} />}
+                            Approve
+                          </button>
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
